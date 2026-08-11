@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ZIP's Dayz — The Lab</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;600&family=Orbitron:wght@700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #07050f; --panel: #0e0a1a; --border: #2a1a4a;
+    --accent: #b44dff; --accent2: #d97bff; --accent3: #7b2fff;
+    --gold: #e8b4ff; --muted: #3a2060; --text: #e0d0f5;
+    --dim: #7a5a9a; --red: #ff4d8a; --green: #4dffb4;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'IBM Plex Mono', monospace; min-height: 100vh; overflow-x: hidden; }
+  body::before { content: ''; position: fixed; inset: 0; background-image: linear-gradient(rgba(180,77,255,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(180,77,255,0.04) 1px, transparent 1px); background-size: 44px 44px; pointer-events: none; z-index: 0; }
+  body::after { content: ''; position: fixed; top: -200px; left: 50%; transform: translateX(-50%); width: 800px; height: 600px; background: radial-gradient(ellipse, rgba(123,47,255,0.12) 0%, transparent 70%); pointer-events: none; z-index: 0; }
+  .container { position: relative; z-index: 1; max-width: 920px; margin: 0 auto; padding: 40px 20px; }
+
+  header { margin-bottom: 36px; border-bottom: 1px solid var(--border); padding-bottom: 24px; }
+  .header-tag { font-size: 11px; color: var(--accent); letter-spacing: 5px; text-transform: uppercase; margin-bottom: 10px; opacity: 0.65; }
+  .brand-line { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+  .brand-zip { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: clamp(36px,7vw,64px); color: var(--accent); letter-spacing: 2px; text-shadow: 0 0 30px rgba(180,77,255,0.5), 0 0 60px rgba(180,77,255,0.2); line-height: 1; }
+  .brand-dayz { font-family: 'Bebas Neue', cursive; font-size: clamp(42px,8vw,76px); color: var(--gold); letter-spacing: 4px; line-height: 1; text-shadow: 0 0 20px rgba(232,180,255,0.3); }
+  .brand-sub { font-family: 'Bebas Neue', cursive; font-size: clamp(18px,3.5vw,30px); color: var(--accent3); letter-spacing: 6px; line-height: 1; margin-top: 4px; opacity: 0.85; }
+  .subtitle { font-size: 11px; color: var(--dim); margin-top: 10px; letter-spacing: 3px; }
+
+  .tab-bar { display: flex; margin-bottom: 28px; border-bottom: 1px solid var(--border); }
+  .tab-btn { font-family: 'Bebas Neue', cursive; font-size: 20px; letter-spacing: 3px; padding: 12px 32px; background: transparent; border: none; border-bottom: 3px solid transparent; color: var(--dim); cursor: pointer; transition: all 0.2s; position: relative; top: 1px; }
+  .tab-btn:hover { color: var(--accent2); }
+  .tab-btn.active { color: var(--accent); border-bottom: 3px solid var(--accent); text-shadow: 0 0 16px rgba(180,77,255,0.4); }
+  .tab-icon { margin-right: 8px; font-size: 16px; }
+  .tab-pane { display: none; }
+  .tab-pane.active { display: block; }
+
+  .section { background: var(--panel); border: 1px solid var(--border); border-radius: 3px; padding: 24px; margin-bottom: 20px; position: relative; }
+  .section::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: linear-gradient(180deg, var(--accent), var(--accent3)); border-radius: 3px 0 0 3px; }
+  .section.gold-bar::before { background: linear-gradient(180deg, var(--gold), var(--accent)); }
+  .section-title { font-size: 10px; letter-spacing: 4px; color: var(--accent); text-transform: uppercase; margin-bottom: 18px; opacity: 0.85; }
+
+  .field-group { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  .field-group.three { grid-template-columns: 1fr 1fr 1fr; }
+  @media (max-width: 580px) {
+    .field-group, .field-group.three { grid-template-columns: 1fr; }
+    .strain-row { grid-template-columns: 1fr 1fr !important; }
+    .strain-row > div:first-child { grid-column: 1 / -1; }
+    .item-row { grid-template-columns: 1fr 1fr !important; }
+    .item-row > div:first-child { grid-column: 1 / -1; }
+  }
+
+  label { display: block; font-size: 10px; letter-spacing: 3px; color: var(--dim); text-transform: uppercase; margin-bottom: 6px; }
+  input[type="text"], textarea, select {
+    width: 100%; background: #080512; border: 1px solid var(--muted);
+    color: var(--text); font-family: 'IBM Plex Mono', monospace;
+    font-size: 15px; padding: 10px 14px; border-radius: 3px; outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent3), 0 0 20px rgba(180,77,255,0.12); }
+  textarea { resize: vertical; min-height: 90px; font-size: 13px; line-height: 1.7; }
+  .input-hint { font-size: 10px; color: var(--dim); margin-top: 6px; opacity: 0.7; line-height: 1.6; }
+  .input-hint.green { color: var(--green); opacity: 0.6; }
+
+  .strain-row { display: grid; grid-template-columns: 170px 1fr 1fr auto; gap: 10px; align-items: end; margin-bottom: 12px; }
+  .item-row { display: grid; grid-template-columns: 160px 1fr 1fr 1fr auto; gap: 10px; align-items: end; margin-bottom: 12px; }
+  .remove-btn { background: transparent; border: 1px solid var(--red); color: var(--red); font-size: 18px; width: 42px; height: 42px; cursor: pointer; border-radius: 3px; display: flex; align-items: center; justify-content: center; transition: background 0.2s; flex-shrink: 0; }
+  .remove-btn:hover { background: rgba(255,77,138,0.12); }
+
+  .btn-row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 8px; }
+  .btn { font-family: 'IBM Plex Mono', monospace; font-size: 12px; letter-spacing: 2px; text-transform: uppercase; padding: 10px 22px; border-radius: 3px; cursor: pointer; border: none; transition: all 0.2s; }
+  .btn-primary { background: linear-gradient(135deg, var(--accent), var(--accent3)); color: #fff; font-weight: 700; box-shadow: 0 0 18px rgba(180,77,255,0.25); }
+  .btn-primary:hover { box-shadow: 0 0 30px rgba(180,77,255,0.5); transform: translateY(-1px); }
+  .btn-secondary { background: transparent; border: 1px solid var(--muted); color: var(--dim); }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-add { background: transparent; border: 1px dashed var(--muted); color: var(--dim); font-size: 11px; }
+  .btn-add:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  .formula-display { font-size: 11px; color: var(--dim); line-height: 1.9; background: #080512; border: 1px solid var(--border); border-radius: 3px; padding: 12px 16px; margin-top: 8px; }
+  .formula-display span { color: var(--accent2); }
+  .parse-section { background: var(--panel); border: 1px solid var(--border); border-radius: 3px; padding: 24px; margin-bottom: 20px; position: relative; }
+  .parse-section::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: linear-gradient(180deg, var(--gold), var(--accent)); border-radius: 3px 0 0 3px; }
+  .or-divider { text-align: center; color: var(--muted); font-size: 11px; letter-spacing: 4px; margin: 6px 0 20px; }
+  .error-msg { color: var(--red); font-size: 12px; margin-top: 10px; display: none; }
+
+  .results-panel { display: none; animation: fadeIn 0.4s ease; }
+  @keyframes fadeIn { from { opacity:0; transform:translateY(12px); } to { opacity:1; transform:translateY(0); } }
+  .results-header { font-family: 'Orbitron', sans-serif; font-size: 20px; letter-spacing: 4px; color: var(--accent); margin-bottom: 20px; text-shadow: 0 0 20px rgba(180,77,255,0.4); }
+  .results-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px,1fr)); gap: 14px; margin-bottom: 20px; }
+
+  .strain-card { background: #0b0718; border: 1px solid var(--border); border-radius: 3px; padding: 18px; position: relative; overflow: hidden; }
+  .strain-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--accent3), var(--accent), var(--accent2)); }
+  .strain-card-name { font-family: 'Bebas Neue', cursive; font-size: 24px; letter-spacing: 3px; color: var(--accent2); margin-bottom: 14px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+  .item-card { background: #0b0718; border: 1px solid var(--border); border-radius: 3px; padding: 18px; position: relative; overflow: hidden; }
+  .item-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, var(--accent3), var(--accent), var(--accent2)); }
+  .item-card-name { font-family: 'Bebas Neue', cursive; font-size: 24px; letter-spacing: 3px; color: var(--accent2); margin-bottom: 14px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+
+  .stat-row { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 7px; font-size: 12px; }
+  .stat-label { color: var(--dim); }
+  .stat-value { color: var(--text); font-weight: 600; }
+  .stat-value.money { color: var(--accent2); }
+  .stat-value.money-green { color: var(--accent2); }
+  .stat-value.big { font-family: 'Bebas Neue', cursive; font-size: 22px; letter-spacing: 1px; color: var(--accent); }
+  .stat-value.big-green { font-family:'Bebas Neue',cursive; font-size:22px; letter-spacing:1px; color:var(--accent); }
+
+  .total-card { background: linear-gradient(135deg, #0f0820, #0b051a); border: 1px solid var(--accent3); border-radius: 3px; padding: 28px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; box-shadow: 0 0 40px rgba(123,47,255,0.1); position: relative; overflow: hidden; }
+  .total-card.green-card { border-color: var(--green); box-shadow: 0 0 40px rgba(77,255,180,0.08); }
+  .total-card::before { content: ''; position: absolute; top: -60px; right: -60px; width: 200px; height: 200px; background: radial-gradient(circle, rgba(180,77,255,0.08), transparent 70%); pointer-events: none; }
+  .total-label { font-size: 10px; letter-spacing: 5px; color: var(--dim); text-transform: uppercase; margin-bottom: 6px; }
+  .total-value { font-family: 'Orbitron', sans-serif; font-weight: 900; font-size: clamp(28px,5vw,46px); color: var(--accent); text-shadow: 0 0 30px rgba(180,77,255,0.5); line-height: 1; }
+  .total-value.green { color: var(--green); text-shadow: 0 0 30px rgba(77,255,180,0.4); }
+  .total-breakdown { display: flex; gap: 28px; flex-wrap: wrap; }
+  .total-sub { text-align: center; }
+  .total-sub-val { font-family: 'Bebas Neue', cursive; font-size: 30px; color: var(--accent2); line-height: 1; }
+  .total-sub-val.green { color: var(--green); }
+  .total-sub-lbl { font-size: 9px; color: var(--dim); letter-spacing: 3px; margin-top: 3px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="header-tag">// the lab — calc v2.0</div>
+    <div class="brand-line">
+      <span class="brand-zip">ZIP'S</span>
+      <span class="brand-dayz">DAYZ</span>
+    </div>
+    <div class="brand-sub">The Lab Weed Calc</div>
+    <div class="subtitle">seeds → buds → baggies → bricks → revenue</div>
+  </header>
+
+  <div class="tab-bar">
+    <button class="tab-btn active" onclick="switchTab('weed',this)"><span class="tab-icon">🌿</span>WEED</button>
+    <button class="tab-btn" onclick="switchTab('items',this)"><span class="tab-icon">📦</span>ITEMS</button>
+    <button class="tab-btn" onclick="switchTab('bricks',this)"><span class="tab-icon">🧱</span>BRICKS</button>
+  </div>
+
+  <!-- ══ WEED TAB ══ -->
+  <div id="tab-weed" class="tab-pane active">
+
+    <div class="parse-section">
+      <div class="section-title">⚡ Quick Input — paste your inventory</div>
+      <textarea id="quickInput" placeholder="e.g. 381 stardawg, 144 purplekush, 141 blue god"></textarea>
+      <div class="input-hint">Format: &lt;number&gt; &lt;strain name&gt;, ... — separate with commas</div>
+      <div class="btn-row" style="margin-top:14px">
+        <button class="btn btn-secondary" onclick="parseQuickInput()">⟶ PARSE INTO FIELDS</button>
+      </div>
+      <div id="parseError" class="error-msg"></div>
+    </div>
+
+    <div class="or-divider">— OR FILL MANUALLY —</div>
+
+    <div class="section">
+      <div class="section-title">🌿 Strains &amp; Seeds</div>
+      <div id="strainRows"></div>
+      <div class="btn-row"><button class="btn btn-add" onclick="addStrainRow()">+ ADD STRAIN</button></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">⚙️ Yield Formula</div>
+      <div class="input-hint" style="margin-bottom:14px;opacity:1">Supports: plain numbers <strong style="color:var(--accent2)">381</strong> · shorthand <strong style="color:var(--accent2)">1k · 1.5m · 1mil · 1million · 1b</strong></div>
+      <div class="field-group three">
+        <div>
+          <label>Buds per seed</label>
+          <input type="text" id="budsPerSeed" value="2" placeholder="e.g. 2" oninput="updateFormulaDisplay()">
+        </div>
+        <div>
+          <label>Buds per baggie</label>
+          <input type="text" id="budsPerBaggie" value="2" placeholder="e.g. 2" oninput="updateFormulaDisplay()">
+        </div>
+        <div>
+          <label>Baggies per brick</label>
+          <input type="text" id="baggiesPerBrick" value="16" placeholder="e.g. 16" oninput="updateFormulaDisplay()">
+        </div>
+      </div>
+      <div class="formula-display" id="formulaDisplay">
+        <span>1 seed</span> → 2 buds &nbsp;|&nbsp; <span>2 buds</span> → 1 baggie &nbsp;|&nbsp; <span>16 baggies</span> → 1 brick
+      </div>
+    </div>
+
+    <div class="btn-row" style="margin-bottom:28px">
+      <button class="btn btn-primary" onclick="calculateWeed()">▶ CALCULATE</button>
+      <button class="btn btn-secondary" onclick="resetWeed()">⟳ RESET</button>
+    </div>
+    <div id="weedCalcError" class="error-msg" style="margin-bottom:16px"></div>
+
+    <div id="weedResults" class="results-panel">
+      <div class="results-header">// WEED OUTPUT</div>
+      <div class="results-grid" id="strainCards"></div>
+      <div class="total-card">
+        <div>
+          <div class="total-label">Total Revenue</div>
+          <div class="total-value" id="weedTotalRevenue">—</div>
+        </div>
+        <div class="total-breakdown" id="weedTotalBreakdown"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ ITEMS TAB ══ -->
+  <div id="tab-items" class="tab-pane">
+
+    <div class="parse-section">
+      <div class="section-title">⚡ Quick Input — paste your items</div>
+      <textarea id="itemQuickInput" placeholder="e.g. 700 nails, 500 screws, 300 bolts"></textarea>
+      <div class="input-hint">Format: &lt;total units&gt; &lt;item name&gt;, ... — then set units per pack &amp; price in the fields</div>
+      <div class="btn-row" style="margin-top:14px">
+        <button class="btn btn-secondary" onclick="parseItemQuickInput()">⟶ PARSE INTO FIELDS</button>
+      </div>
+      <div id="itemParseError" class="error-msg"></div>
+    </div>
+
+    <div class="or-divider">— OR FILL MANUALLY —</div>
+
+    <div class="section gold-bar">
+      <div class="section-title">📦 Item Types</div>
+      <div class="input-hint" style="margin-bottom:14px;opacity:1">All number fields support shorthand: <strong style="color:var(--accent2)">1k · 1.5m · 1mil · 1million · 1b</strong> or plain numbers</div>
+      <div id="itemRows"></div>
+      <div class="btn-row"><button class="btn btn-add" onclick="addItemRow()">+ ADD ITEM TYPE</button></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">💰 Budget — How Many Can I Get?</div>
+      <p style="font-size:11px;color:var(--dim);margin-bottom:18px;line-height:1.8;">Enter your budget and pick an item — updates live when you change the price or units per pack above.</p>
+      <div class="field-group">
+        <div>
+          <label>Your budget</label>
+          <input type="text" id="budgetAmount" placeholder="e.g. 1mil, 1.23m, 500k" oninput="calcBudget()">
+          <div class="input-hint">1mil · 1.5m · 500k · 1million · or plain numbers</div>
+        </div>
+        <div>
+          <label>Select item</label>
+          <select id="budgetItemSelect" onchange="calcBudget()" style="appearance:none;cursor:pointer">
+            <option value="">— choose an item —</option>
+          </select>
+        </div>
+      </div>
+      <div id="budgetResult" style="display:none;margin-top:16px">
+        <div style="background:#0b0718;border:1px solid var(--border);border-radius:3px;padding:20px;position:relative;overflow:hidden">
+          <div style="position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--accent3),var(--accent),var(--accent2))"></div>
+          <div style="font-family:'Bebas Neue',cursive;font-size:12px;letter-spacing:3px;color:var(--dim);margin-bottom:14px" id="budgetItemLabel">—</div>
+          <div style="display:flex;gap:24px;flex-wrap:wrap;align-items:flex-end">
+            <div>
+              <div style="font-size:10px;letter-spacing:3px;color:var(--dim);margin-bottom:4px">PACKS YOU CAN BUY</div>
+              <div style="font-family:'Bebas Neue',cursive;font-size:46px;color:var(--accent);line-height:1;text-shadow:0 0 20px rgba(180,77,255,0.4)" id="budgetPacks">—</div>
+            </div>
+            <div>
+              <div style="font-size:10px;letter-spacing:3px;color:var(--dim);margin-bottom:4px">TOTAL UNITS</div>
+              <div style="font-family:'Bebas Neue',cursive;font-size:46px;color:var(--accent2);line-height:1;text-shadow:0 0 20px rgba(217,123,255,0.3)" id="budgetUnits">—</div>
+            </div>
+            <div>
+              <div style="font-size:10px;letter-spacing:3px;color:var(--dim);margin-bottom:4px">SPENT</div>
+              <div style="font-family:'Bebas Neue',cursive;font-size:28px;color:var(--text);line-height:1" id="budgetSpent">—</div>
+            </div>
+            <div>
+              <div style="font-size:10px;letter-spacing:3px;color:var(--dim);margin-bottom:4px">CHANGE LEFT</div>
+              <div style="font-family:'Bebas Neue',cursive;font-size:28px;color:var(--accent2);line-height:1" id="budgetChange">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row" style="margin-bottom:28px">
+      <button class="btn btn-primary" onclick="calculateItems()">▶ CALCULATE</button>
+      <button class="btn btn-secondary" onclick="resetItems()">⟳ RESET</button>
+    </div>
+    <div id="itemCalcError" class="error-msg" style="margin-bottom:16px"></div>
+
+    <div id="itemResults" class="results-panel">
+      <div class="results-header">// ITEMS OUTPUT</div>
+      <div class="results-grid" id="itemCards"></div>
+      <div class="total-card">
+        <div>
+          <div class="total-label">Total Revenue</div>
+          <div class="total-value" id="itemTotalRevenue">—</div>
+        </div>
+        <div class="total-breakdown" id="itemTotalBreakdown"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ BRICKS TAB ══ -->
+  <div id="tab-bricks" class="tab-pane">
+
+    <!-- Brick Types (saved presets) -->
+    <div class="section">
+      <div class="section-title">🧱 Brick Types — Set Your Prices</div>
+      <p style="font-size:11px;color:var(--dim);margin-bottom:18px;line-height:1.8;">Add each brick type once. These are saved — just update the quantity each time you want to calculate.</p>
+      <div id="brickTypeRows"></div>
+      <div class="btn-row">
+        <button class="btn btn-add" onclick="addBrickType()">+ ADD BRICK TYPE</button>
+      </div>
+    </div>
+
+    <!-- Count input -->
+    <div class="section">
+      <div class="section-title">📊 How Many Bricks Do You Have?</div>
+      <p style="font-size:11px;color:var(--dim);margin-bottom:18px;line-height:1.8;">Enter your quantity for each brick type. Supports shorthand: <strong style="color:var(--accent2)">1k · 1mil · 500k</strong></p>
+      <div id="brickCountRows"></div>
+    </div>
+
+    <div class="btn-row" style="margin-bottom:28px">
+      <button class="btn btn-primary" onclick="calculateBricks()">▶ CALCULATE</button>
+      <button class="btn btn-secondary" onclick="resetBrickCounts()">⟳ RESET COUNTS</button>
+    </div>
+    <div id="brickCalcError" class="error-msg" style="margin-bottom:16px"></div>
+
+    <div id="brickResults" class="results-panel">
+      <div class="results-header">// BRICKS OUTPUT</div>
+      <div class="results-grid" id="brickCards"></div>
+      <div class="total-card">
+        <div>
+          <div class="total-label">Total Revenue</div>
+          <div class="total-value" id="brickTotalRevenue">—</div>
+        </div>
+        <div class="total-breakdown" id="brickTotalBreakdown"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ BRICKS TAB ══ -->
+  <div id="tab-bricks" class="tab-pane">
+
+    <div class="section">
+      <div class="section-title">🧱 Brick Types &amp; Prices</div>
+      <p style="font-size:11px;color:var(--dim);margin-bottom:18px;line-height:1.8;">Define your brick types once — name and price per brick. These save as your presets so you never have to re-enter them.</p>
+      <div id="brickTypeRows"></div>
+      <div class="btn-row">
+        <button class="btn btn-add" onclick="addBrickType()">+ ADD BRICK TYPE</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">📥 How Many Bricks Do You Have?</div>
+      <p style="font-size:11px;color:var(--dim);margin-bottom:18px;line-height:1.8;">Enter how many of each brick you have — updates total instantly as you type.</p>
+      <div id="brickCountRows"></div>
+      <div id="brickCountEmpty" style="font-size:11px;color:var(--dim);padding:8px 0">Add brick types above first.</div>
+    </div>
+
+    <div class="btn-row" style="margin-bottom:28px">
+      <button class="btn btn-primary" onclick="calculateBricks()">▶ CALCULATE</button>
+      <button class="btn btn-secondary" onclick="resetBrickCounts()">⟳ RESET COUNTS</button>
+    </div>
+    <div id="brickCalcError" class="error-msg" style="margin-bottom:16px"></div>
+
+    <div id="brickResults" class="results-panel">
+      <div class="results-header">// BRICKS OUTPUT</div>
+      <div class="results-grid" id="brickCards"></div>
+      <div class="total-card">
+        <div>
+          <div class="total-label">Total Revenue</div>
+          <div class="total-value" id="brickTotalRevenue">—</div>
+        </div>
+        <div class="total-breakdown" id="brickTotalBreakdown"></div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+<script>
+// ── SHARED: parse shorthand numbers ──
+function parseNum(raw) {
+  if (raw === null || raw === undefined) return 0;
+  raw = String(raw).trim().toLowerCase().replace(/,/g, '');
+  if (raw === '' || raw === '0') return 0;
+  const m = raw.match(/^([\d.]+)\s*(k|m|mil|mill|million|b|billion)?$/);
+  if (!m) return NaN;
+  let v = parseFloat(m[1]);
+  const s = m[2] || '';
+  if (s === 'k') v *= 1e3;
+  else if (['m','mil','mill','million'].includes(s)) v *= 1e6;
+  else if (['b','billion'].includes(s)) v *= 1e9;
+  return v;
+}
+
+// ── TABS ──
+function switchTab(name, btn) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  btn.classList.add('active');
+}
+
+// ── WEED ──
+let strains = [];
+
+function updateFormulaDisplay() {
+  const bps = parseNum(document.getElementById('budsPerSeed').value) || 2;
+  const bpb = parseNum(document.getElementById('budsPerBaggie').value) || 2;
+  const bag = parseNum(document.getElementById('baggiesPerBrick').value) || 16;
+  document.getElementById('formulaDisplay').innerHTML =
+    `<span>1 seed</span> → ${bps} bud${bps!==1?'s':''} &nbsp;|&nbsp; <span>${bpb} bud${bpb!==1?'s':''}</span> → 1 baggie &nbsp;|&nbsp; <span>${bag} baggie${bag!==1?'s':''}</span> → 1 brick`;
+}
+
+function addStrainRow(name='', seeds='', price='') {
+  strains.push({ id: Date.now()+Math.random(), name, seeds, price });
+  renderStrains();
+}
+function removeStrain(id) { strains = strains.filter(s => s.id !== id); renderStrains(); }
+function updateStrain(id, field, value) {
+  const s = strains.find(x => x.id === id); if (!s) return;
+  s[field] = value;
+}
+function renderStrains() {
+  document.getElementById('strainRows').innerHTML = strains.map(s => `
+    <div class="strain-row">
+      <div><label>Strain name</label>
+        <input type="text" value="${s.name}" placeholder="e.g. OG Kush"
+          oninput="updateStrain(${s.id},'name',this.value)"
+          style="font-family:'Bebas Neue',cursive;font-size:18px;letter-spacing:2px;color:var(--accent2)">
+      </div>
+      <div><label>Seeds</label>
+        <input type="text" value="${s.seeds}" placeholder="e.g. 381"
+          oninput="updateStrain(${s.id},'seeds',this.value)">
+      </div>
+      <div><label>Price / brick</label>
+        <input type="text" value="${s.price}" placeholder="e.g. 140k"
+          oninput="updateStrain(${s.id},'price',this.value)">
+      </div>
+      <button class="remove-btn" onclick="removeStrain(${s.id})">×</button>
+    </div>`).join('');
+}
+
+function parseQuickInput() {
+  const raw = document.getElementById('quickInput').value.trim();
+  const errEl = document.getElementById('parseError');
+  errEl.style.display = 'none';
+  if (!raw) { errEl.textContent='Enter some text first.'; errEl.style.display='block'; return; }
+  const parts = raw.split(',');
+  const parsed = [];
+  for (let part of parts) {
+    part = part.trim();
+    const match = part.match(/^([\d.]+\s*(?:k|m|mil|mill|million|b|billion)?)\s+(.+)$/i);
+    if (!match) { errEl.textContent=`Couldn't parse: "${part}" — use: 381 stardawg`; errEl.style.display='block'; return; }
+    parsed.push({ seeds: match[1].trim(), name: match[2].trim() });
+  }
+  const defaultPrices = { stardawg:'140k','star dawg':'140k', purplekush:'120k','purple kush':'120k', bluegod:'100k','blue god':'100k' };
+  strains = parsed.map(p => {
+    const key = p.name.toLowerCase().replace(/\s+/g,'');
+    const pk = Object.keys(defaultPrices).find(k => k.replace(/\s+/g,'')=== key)||'';
+    return { id: Date.now()+Math.random(), name: p.name, seeds: p.seeds, price: defaultPrices[pk]||'' };
+  });
+  renderStrains();
+}
+
+function calculateWeed() {
+  const errEl = document.getElementById('weedCalcError');
+  errEl.style.display = 'none';
+  if (!strains.length) { errEl.textContent='Add at least one strain.'; errEl.style.display='block'; return; }
+  const bps  = parseNum(document.getElementById('budsPerSeed').value) || 2;
+  const bpb  = parseNum(document.getElementById('budsPerBaggie').value) || 2;
+  const bpbk = parseNum(document.getElementById('baggiesPerBrick').value) || 16;
+  let totalRevenue=0, totalBricks=0, totalBaggies=0;
+  const html = strains.map(s => {
+    const seeds  = parseNum(s.seeds) || 0;
+    const price  = parseNum(s.price) || 0;
+    const buds   = seeds * bps;
+    const bags   = Math.floor(buds / bpb);
+    const bricks = Math.floor(bags / bpbk);
+    const rev    = bricks * price;
+    const lbags  = bags % bpbk, lbuds = buds % bpb;
+    totalRevenue+=rev; totalBricks+=bricks; totalBaggies+=bags;
+    return `<div class="strain-card">
+      <div class="strain-card-name">${s.name||'Unnamed'}</div>
+      <div class="stat-row"><span class="stat-label">Seeds</span><span class="stat-value">${seeds.toLocaleString()}</span></div>
+      <div class="stat-row"><span class="stat-label">Total buds</span><span class="stat-value">${buds.toLocaleString()}</span></div>
+      <div class="stat-row"><span class="stat-label">Baggies</span><span class="stat-value">${bags.toLocaleString()}</span></div>
+      <div class="stat-row"><span class="stat-label">Bricks</span><span class="stat-value big">${bricks.toLocaleString()}</span></div>
+      <div class="stat-row"><span class="stat-label">Price / brick</span><span class="stat-value">${price?price.toLocaleString():'—'}</span></div>
+      <div class="stat-row"><span class="stat-label">Revenue</span><span class="stat-value money">${rev?rev.toLocaleString():'—'}</span></div>
+      ${lbags>0||lbuds>0?`<div class="stat-row" style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px"><span class="stat-label">Leftover</span><span class="stat-value" style="font-size:11px;color:var(--dim)">${lbags} bag${lbags!==1?'s':''} + ${lbuds} bud${lbuds!==1?'s':''}</span></div>`:''}
+    </div>`;
+  }).join('');
+  document.getElementById('strainCards').innerHTML = html;
+  document.getElementById('weedTotalRevenue').textContent = totalRevenue.toLocaleString();
+  document.getElementById('weedTotalBreakdown').innerHTML = `
+    <div class="total-sub"><div class="total-sub-val">${totalBricks.toLocaleString()}</div><div class="total-sub-lbl">BRICKS</div></div>
+    <div class="total-sub"><div class="total-sub-val">${totalBaggies.toLocaleString()}</div><div class="total-sub-lbl">BAGGIES</div></div>
+    <div class="total-sub"><div class="total-sub-val">${strains.reduce((a,s)=>a+parseNum(s.seeds)*bps,0).toLocaleString()}</div><div class="total-sub-lbl">TOTAL BUDS</div></div>`;
+  const r = document.getElementById('weedResults');
+  r.style.display='block'; r.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function resetWeed() {
+  strains=[]; renderStrains();
+  document.getElementById('quickInput').value='';
+  document.getElementById('budsPerSeed').value='2';
+  document.getElementById('budsPerBaggie').value='2';
+  document.getElementById('baggiesPerBrick').value='16';
+  updateFormulaDisplay();
+  document.getElementById('weedResults').style.display='none';
+  document.getElementById('parseError').style.display='none';
+  document.getElementById('weedCalcError').style.display='none';
+}
+
+// ── ITEMS ──
+let items = [];
+
+function addItemRow(name='', unitsPerPack='', packPrice='', totalUnits='') {
+  items.push({ id: Date.now()+Math.random(), name, unitsPerPack, packPrice, totalUnits });
+  renderItems();
+}
+function removeItem(id) { items = items.filter(i => i.id !== id); renderItems(); }
+function updateItem(id, field, value) {
+  const it = items.find(x => x.id===id); if (!it) return;
+  it[field] = value;
+}
+function renderItems() {
+  document.getElementById('itemRows').innerHTML = items.map(it => `
+    <div class="item-row">
+      <div><label>Item name</label>
+        <input type="text" value="${it.name}" placeholder="e.g. Nails"
+          oninput="updateItem(${it.id},'name',this.value);refreshBudgetDropdown()"
+          style="font-family:'Bebas Neue',cursive;font-size:18px;letter-spacing:2px;color:var(--accent2)">
+      </div>
+      <div><label>Units per pack</label>
+        <input type="text" value="${it.unitsPerPack}" placeholder="e.g. 70"
+          oninput="updateItem(${it.id},'unitsPerPack',this.value);calcBudget()">
+      </div>
+      <div><label>Price per pack</label>
+        <input type="text" value="${it.packPrice}" placeholder="e.g. 120k"
+          oninput="updateItem(${it.id},'packPrice',this.value);calcBudget()">
+      </div>
+      <div><label>Total units</label>
+        <input type="text" value="${it.totalUnits}" placeholder="e.g. 700"
+          oninput="updateItem(${it.id},'totalUnits',this.value)">
+      </div>
+      <button class="remove-btn" onclick="removeItem(${it.id})">×</button>
+    </div>`).join('');
+  refreshBudgetDropdown();
+}
+
+function refreshBudgetDropdown() {
+  const sel = document.getElementById('budgetItemSelect');
+  const prev = sel.value;
+  sel.innerHTML = '<option value="">— choose an item —</option>' +
+    items.map(it => `<option value="${it.id}">${it.name||'Unnamed'}</option>`).join('');
+  if (prev && items.find(i => String(i.id) === prev)) sel.value = prev;
+  calcBudget();
+}
+
+function calcBudget() {
+  const budget = parseNum(document.getElementById('budgetAmount').value);
+  const selId  = document.getElementById('budgetItemSelect').value;
+  const res    = document.getElementById('budgetResult');
+  if (!budget || isNaN(budget) || !selId) { res.style.display='none'; return; }
+  const it  = items.find(i => String(i.id) === selId);
+  const pp  = parseNum(it?.packPrice);
+  const upp = parseNum(it?.unitsPerPack);
+  if (!it || !pp || !upp) { res.style.display='none'; return; }
+  const packs  = Math.floor(budget / pp);
+  const units  = packs * upp;
+  const spent  = packs * pp;
+  const change = budget - spent;
+  document.getElementById('budgetItemLabel').textContent =
+    (it.name||'Unnamed').toUpperCase() + ' — ' + pp.toLocaleString() + ' per pack · ' + upp.toLocaleString() + ' units per pack';
+  document.getElementById('budgetPacks').textContent  = packs.toLocaleString();
+  document.getElementById('budgetUnits').textContent  = units.toLocaleString();
+  document.getElementById('budgetSpent').textContent  = spent.toLocaleString();
+  document.getElementById('budgetChange').textContent = change.toLocaleString();
+  res.style.display = 'block';
+}
+
+
+function parseItemQuickInput() {
+  const raw = document.getElementById('itemQuickInput').value.trim();
+  const errEl = document.getElementById('itemParseError');
+  errEl.style.display = 'none';
+  if (!raw) { errEl.textContent='Enter some text first.'; errEl.style.display='block'; return; }
+  const parts = raw.split(',');
+  const parsed = [];
+  for (let part of parts) {
+    part = part.trim();
+    const match = part.match(/^([\d.]+\s*(?:k|m|mil|mill|million|b|billion)?)\s+(.+)$/i);
+    if (!match) { errEl.textContent=`Couldn't parse: "${part}" — use: 700 nails`; errEl.style.display='block'; return; }
+    parsed.push({ totalUnits: match[1].trim(), name: match[2].trim() });
+  }
+  items = parsed.map(p => ({ id: Date.now()+Math.random(), name: p.name, unitsPerPack: '', packPrice: '', totalUnits: p.totalUnits }));
+  renderItems();
+}
+
+function calculateItems() {
+  const errEl = document.getElementById('itemCalcError');
+  errEl.style.display='none';
+  if (!items.length) { errEl.textContent='Add at least one item type.'; errEl.style.display='block'; return; }
+  let totalRevenue=0, totalPacks=0, totalUnitsSum=0, totalChangeLeft=0;
+  const html = items.map(it => {
+    const total    = parseNum(it.totalUnits) || 0;
+    const upp      = parseNum(it.unitsPerPack) || 0;
+    const pp       = parseNum(it.packPrice) || 0;
+    const packs    = upp ? Math.floor(total / upp) : 0;
+    const rev      = packs * pp;
+    const leftover = upp ? total % upp : 0;
+    const change   = pp ? leftover * (pp / upp) : 0;
+    totalRevenue+=rev; totalPacks+=packs; totalUnitsSum+=total; totalChangeLeft+=change;
+    return `<div class="strain-card">
+      <div class="strain-card-name">${it.name||'Unnamed'}</div>
+      <div class="stat-row"><span class="stat-label">Total units</span><span class="stat-value">${total.toLocaleString()}</span></div>
+      <div class="stat-row"><span class="stat-label">Units / pack</span><span class="stat-value">${upp?upp.toLocaleString():'—'}</span></div>
+      <div class="stat-row"><span class="stat-label">Full packs</span><span class="stat-value big">${packs.toLocaleString()}</span></div>
+      <div class="stat-row"><span class="stat-label">Price / pack</span><span class="stat-value">${pp?pp.toLocaleString():'—'}</span></div>
+      <div class="stat-row"><span class="stat-label">Revenue</span><span class="stat-value money">${rev?rev.toLocaleString():'—'}</span></div>
+      ${leftover>0?`<div class="stat-row" style="margin-top:8px;border-top:1px solid var(--border);padding-top:8px">
+        <span class="stat-label">Leftover units</span><span class="stat-value" style="font-size:11px;color:var(--dim)">${leftover.toLocaleString()} unit${leftover!==1?'s':''}</span>
+      </div>
+      <div class="stat-row"><span class="stat-label">Change left</span><span class="stat-value money">${Math.round(change).toLocaleString()}</span></div>`:''}
+    </div>`;
+  }).join('');
+  document.getElementById('itemCards').innerHTML = html;
+  document.getElementById('itemTotalRevenue').textContent = totalRevenue.toLocaleString();
+  document.getElementById('itemTotalBreakdown').innerHTML = `
+    <div class="total-sub"><div class="total-sub-val">${totalPacks.toLocaleString()}</div><div class="total-sub-lbl">TOTAL PACKS</div></div>
+    <div class="total-sub"><div class="total-sub-val">${totalUnitsSum.toLocaleString()}</div><div class="total-sub-lbl">TOTAL UNITS</div></div>
+    ${totalChangeLeft>0?`<div class="total-sub"><div class="total-sub-val" style="font-size:22px">${Math.round(totalChangeLeft).toLocaleString()}</div><div class="total-sub-lbl">CHANGE LEFT</div></div>`:''}`;  const r = document.getElementById('itemResults');
+  r.style.display='block'; r.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function resetItems() {
+  items=[]; renderItems();
+  document.getElementById('itemQuickInput').value='';
+  document.getElementById('budgetAmount').value='';
+  document.getElementById('budgetResult').style.display='none';
+  document.getElementById('itemResults').style.display='none';
+  document.getElementById('itemCalcError').style.display='none';
+  document.getElementById('itemParseError').style.display='none';
+}
+
+// ── BRICKS ──
+let brickTypes = []; // { id, name, price }
+let brickCounts = {}; // id -> qty string
+
+function addBrickType(name='', price='') {
+  const id = Date.now() + Math.random();
+  brickTypes.push({ id, name, price });
+  brickCounts[String(id)] = '';
+  renderBrickTypes();
+  renderBrickCounts();
+}
+
+function removeBrickType(id) {
+  brickTypes = brickTypes.filter(b => b.id !== id);
+  delete brickCounts[id];
+  renderBrickTypes();
+  renderBrickCounts();
+}
+
+function updateBrickType(id, field, value) {
+  const b = brickTypes.find(x => String(x.id) === String(id)); if (!b) return;
+  b[field] = value;
+  if (field === 'name') renderBrickCounts();
+}
+
+function renderBrickTypes() {
+  document.getElementById('brickTypeRows').innerHTML = brickTypes.map(b => `
+    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;margin-bottom:12px">
+      <div><label>Brick name</label>
+        <input type="text" value="${b.name}" placeholder="e.g. Stardawg"
+          oninput="updateBrickType(${b.id},'name',this.value)"
+          style="font-family:'Bebas Neue',cursive;font-size:18px;letter-spacing:2px;color:var(--accent2)">
+      </div>
+      <div><label>Price per brick</label>
+        <input type="text" value="${b.price}" placeholder="e.g. 140k"
+          oninput="updateBrickType(${b.id},'price',this.value)">
+      </div>
+      <button class="remove-btn" onclick="removeBrickType(${b.id})">×</button>
+    </div>`).join('');
+}
+
+function renderBrickCounts() {
+  if (!brickTypes.length) {
+    document.getElementById('brickCountRows').innerHTML = '<p style="font-size:11px;color:var(--dim)">Add brick types above first.</p>';
+    return;
+  }
+  document.getElementById('brickCountRows').innerHTML = brickTypes.map((b,i) => `
+    <div style="display:grid;grid-template-columns:180px 1fr;gap:14px;align-items:center;margin-bottom:12px">
+      <div style="font-family:'Bebas Neue',cursive;font-size:20px;letter-spacing:2px;color:var(--accent2);padding:8px 0">${b.name||'Unnamed'}</div>
+      <div>
+        <input type="text" value="${brickCounts[b.id]||''}" placeholder="How many? e.g. 10 or 1k"
+          oninput="brickCounts['${b.id}']=this.value">
+      </div>
+    </div>`).join('');
+}
+
+function calculateBricks() {
+  const errEl = document.getElementById('brickCalcError');
+  errEl.style.display='none';
+  if (!brickTypes.length) { errEl.textContent='Add at least one brick type.'; errEl.style.display='block'; return; }
+  let totalRevenue=0, totalBricks=0;
+  const html = brickTypes.map(b => {
+    const qty = parseNum(brickCounts[String(b.id)]) || 0;
+    const price = parseNum(b.price) || 0;
+    const rev = qty * price;
+    totalRevenue += rev; totalBricks += qty;
+    return `<div class="strain-card">
+      <div class="strain-card-name">${b.name||'Unnamed'}</div>
+      <div class="stat-row"><span class="stat-label">Bricks</span><span class="stat-value big">${qty.toLocaleString()}</span></div>
+      <div class="stat-row"><span class="stat-label">Price / brick</span><span class="stat-value">${price?price.toLocaleString():'—'}</span></div>
+      <div class="stat-row"><span class="stat-label">Revenue</span><span class="stat-value money">${rev?rev.toLocaleString():'—'}</span></div>
+    </div>`;
+  }).join('');
+  document.getElementById('brickCards').innerHTML = html;
+  document.getElementById('brickTotalRevenue').textContent = totalRevenue.toLocaleString();
+  document.getElementById('brickTotalBreakdown').innerHTML = `
+    <div class="total-sub"><div class="total-sub-val">${totalBricks.toLocaleString()}</div><div class="total-sub-lbl">TOTAL BRICKS</div></div>
+    <div class="total-sub"><div class="total-sub-val">${brickTypes.length}</div><div class="total-sub-lbl">TYPES</div></div>`;
+  const r = document.getElementById('brickResults');
+  r.style.display='block'; r.scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function resetBrickCounts() {
+  brickTypes.forEach(b => brickCounts[String(b.id)] = '');
+  renderBrickCounts();
+  document.getElementById('brickResults').style.display='none';
+  document.getElementById('brickCalcError').style.display='none';
+}
+
+// Init defaults
+addStrainRow('Stardawg','381','140k');
+addStrainRow('Purplekush','144','120k');
+addStrainRow('Blue God','141','100k');
+addItemRow('Nails','70','120k','700');
+addBrickType('Skunk','100k');
+addBrickType('Blue God','100k');
+addBrickType('Purple Kush','120k');
+addBrickType('Stardawg','140k');
+</script>
+</body>
+</html>
