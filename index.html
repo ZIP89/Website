@@ -131,7 +131,6 @@
   <div class="tab-bar">
     <button class="tab-btn active" onclick="switchTab('weed',this)"><span class="tab-icon">🌿</span>WEED</button>
     <button class="tab-btn" onclick="switchTab('items',this)"><span class="tab-icon">📦</span>ITEMS</button>
-    <button class="tab-btn" onclick="switchTab('bricks',this)"><span class="tab-icon">🧱</span>BRICKS</button>
   </div>
 
   <!-- ══ WEED TAB ══ -->
@@ -276,85 +275,6 @@
           <div class="total-value" id="itemTotalRevenue">—</div>
         </div>
         <div class="total-breakdown" id="itemTotalBreakdown"></div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ══ BRICKS TAB ══ -->
-  <div id="tab-bricks" class="tab-pane">
-
-    <!-- Brick Types (saved presets) -->
-    <div class="section">
-      <div class="section-title">🧱 Brick Types — Set Your Prices</div>
-      <p style="font-size:11px;color:var(--dim);margin-bottom:18px;line-height:1.8;">Add each brick type once. These are saved — just update the quantity each time you want to calculate.</p>
-      <div id="brickTypeRows"></div>
-      <div class="btn-row">
-        <button class="btn btn-add" onclick="addBrickType()">+ ADD BRICK TYPE</button>
-      </div>
-    </div>
-
-    <!-- Count input -->
-    <div class="section">
-      <div class="section-title">📊 How Many Bricks Do You Have?</div>
-      <p style="font-size:11px;color:var(--dim);margin-bottom:18px;line-height:1.8;">Enter your quantity for each brick type. Supports shorthand: <strong style="color:var(--accent2)">1k · 1mil · 500k</strong></p>
-      <div id="brickCountRows"></div>
-    </div>
-
-    <div class="btn-row" style="margin-bottom:28px">
-      <button class="btn btn-primary" onclick="calculateBricks()">▶ CALCULATE</button>
-      <button class="btn btn-secondary" onclick="resetBrickCounts()">⟳ RESET COUNTS</button>
-    </div>
-    <div id="brickCalcError" class="error-msg" style="margin-bottom:16px"></div>
-
-    <div id="brickResults" class="results-panel">
-      <div class="results-header">// BRICKS OUTPUT</div>
-      <div class="results-grid" id="brickCards"></div>
-      <div class="total-card">
-        <div>
-          <div class="total-label">Total Revenue</div>
-          <div class="total-value" id="brickTotalRevenue">—</div>
-        </div>
-        <div class="total-breakdown" id="brickTotalBreakdown"></div>
-      </div>
-    </div>
-
-  </div>
-
-  <!-- ══ BRICKS TAB ══ -->
-  <div id="tab-bricks" class="tab-pane">
-
-    <div class="section">
-      <div class="section-title">🧱 Brick Types &amp; Prices</div>
-      <p style="font-size:11px;color:var(--dim);margin-bottom:18px;line-height:1.8;">Define your brick types once — name and price per brick. These save as your presets so you never have to re-enter them.</p>
-      <div id="brickTypeRows"></div>
-      <div class="btn-row">
-        <button class="btn btn-add" onclick="addBrickType()">+ ADD BRICK TYPE</button>
-      </div>
-    </div>
-
-    <div class="section">
-      <div class="section-title">📥 How Many Bricks Do You Have?</div>
-      <p style="font-size:11px;color:var(--dim);margin-bottom:18px;line-height:1.8;">Enter how many of each brick you have — updates total instantly as you type.</p>
-      <div id="brickCountRows"></div>
-      <div id="brickCountEmpty" style="font-size:11px;color:var(--dim);padding:8px 0">Add brick types above first.</div>
-    </div>
-
-    <div class="btn-row" style="margin-bottom:28px">
-      <button class="btn btn-primary" onclick="calculateBricks()">▶ CALCULATE</button>
-      <button class="btn btn-secondary" onclick="resetBrickCounts()">⟳ RESET COUNTS</button>
-    </div>
-    <div id="brickCalcError" class="error-msg" style="margin-bottom:16px"></div>
-
-    <div id="brickResults" class="results-panel">
-      <div class="results-header">// BRICKS OUTPUT</div>
-      <div class="results-grid" id="brickCards"></div>
-      <div class="total-card">
-        <div>
-          <div class="total-label">Total Revenue</div>
-          <div class="total-value" id="brickTotalRevenue">—</div>
-        </div>
-        <div class="total-breakdown" id="brickTotalBreakdown"></div>
       </div>
     </div>
 
@@ -629,104 +549,11 @@ function resetItems() {
   document.getElementById('itemParseError').style.display='none';
 }
 
-// ── BRICKS ──
-let brickTypes = []; // { id, name, price }
-let brickCounts = {}; // id -> qty string
-
-function addBrickType(name='', price='') {
-  const id = Date.now() + Math.random();
-  brickTypes.push({ id, name, price });
-  brickCounts[String(id)] = '';
-  renderBrickTypes();
-  renderBrickCounts();
-}
-
-function removeBrickType(id) {
-  brickTypes = brickTypes.filter(b => b.id !== id);
-  delete brickCounts[id];
-  renderBrickTypes();
-  renderBrickCounts();
-}
-
-function updateBrickType(id, field, value) {
-  const b = brickTypes.find(x => String(x.id) === String(id)); if (!b) return;
-  b[field] = value;
-  if (field === 'name') renderBrickCounts();
-}
-
-function renderBrickTypes() {
-  document.getElementById('brickTypeRows').innerHTML = brickTypes.map(b => `
-    <div style="display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end;margin-bottom:12px">
-      <div><label>Brick name</label>
-        <input type="text" value="${b.name}" placeholder="e.g. Stardawg"
-          oninput="updateBrickType(${b.id},'name',this.value)"
-          style="font-family:'Bebas Neue',cursive;font-size:18px;letter-spacing:2px;color:var(--accent2)">
-      </div>
-      <div><label>Price per brick</label>
-        <input type="text" value="${b.price}" placeholder="e.g. 140k"
-          oninput="updateBrickType(${b.id},'price',this.value)">
-      </div>
-      <button class="remove-btn" onclick="removeBrickType(${b.id})">×</button>
-    </div>`).join('');
-}
-
-function renderBrickCounts() {
-  if (!brickTypes.length) {
-    document.getElementById('brickCountRows').innerHTML = '<p style="font-size:11px;color:var(--dim)">Add brick types above first.</p>';
-    return;
-  }
-  document.getElementById('brickCountRows').innerHTML = brickTypes.map((b,i) => `
-    <div style="display:grid;grid-template-columns:180px 1fr;gap:14px;align-items:center;margin-bottom:12px">
-      <div style="font-family:'Bebas Neue',cursive;font-size:20px;letter-spacing:2px;color:var(--accent2);padding:8px 0">${b.name||'Unnamed'}</div>
-      <div>
-        <input type="text" value="${brickCounts[b.id]||''}" placeholder="How many? e.g. 10 or 1k"
-          oninput="brickCounts['${b.id}']=this.value">
-      </div>
-    </div>`).join('');
-}
-
-function calculateBricks() {
-  const errEl = document.getElementById('brickCalcError');
-  errEl.style.display='none';
-  if (!brickTypes.length) { errEl.textContent='Add at least one brick type.'; errEl.style.display='block'; return; }
-  let totalRevenue=0, totalBricks=0;
-  const html = brickTypes.map(b => {
-    const qty = parseNum(brickCounts[String(b.id)]) || 0;
-    const price = parseNum(b.price) || 0;
-    const rev = qty * price;
-    totalRevenue += rev; totalBricks += qty;
-    return `<div class="strain-card">
-      <div class="strain-card-name">${b.name||'Unnamed'}</div>
-      <div class="stat-row"><span class="stat-label">Bricks</span><span class="stat-value big">${qty.toLocaleString()}</span></div>
-      <div class="stat-row"><span class="stat-label">Price / brick</span><span class="stat-value">${price?price.toLocaleString():'—'}</span></div>
-      <div class="stat-row"><span class="stat-label">Revenue</span><span class="stat-value money">${rev?rev.toLocaleString():'—'}</span></div>
-    </div>`;
-  }).join('');
-  document.getElementById('brickCards').innerHTML = html;
-  document.getElementById('brickTotalRevenue').textContent = totalRevenue.toLocaleString();
-  document.getElementById('brickTotalBreakdown').innerHTML = `
-    <div class="total-sub"><div class="total-sub-val">${totalBricks.toLocaleString()}</div><div class="total-sub-lbl">TOTAL BRICKS</div></div>
-    <div class="total-sub"><div class="total-sub-val">${brickTypes.length}</div><div class="total-sub-lbl">TYPES</div></div>`;
-  const r = document.getElementById('brickResults');
-  r.style.display='block'; r.scrollIntoView({behavior:'smooth',block:'start'});
-}
-
-function resetBrickCounts() {
-  brickTypes.forEach(b => brickCounts[String(b.id)] = '');
-  renderBrickCounts();
-  document.getElementById('brickResults').style.display='none';
-  document.getElementById('brickCalcError').style.display='none';
-}
-
 // Init defaults
 addStrainRow('Stardawg','381','140k');
 addStrainRow('Purplekush','144','120k');
 addStrainRow('Blue God','141','100k');
 addItemRow('Nails','70','120k','700');
-addBrickType('Skunk','100k');
-addBrickType('Blue God','100k');
-addBrickType('Purple Kush','120k');
-addBrickType('Stardawg','140k');
 </script>
 </body>
 </html>
